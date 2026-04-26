@@ -1,64 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>GPA Calculator</title>
+<?php
+header('Content-Type: application/json');
 
-<!-- Bootstrap CSS -->
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+if (isset($_POST['course'], $_POST['credits'], $_POST['grade'])) {
 
-<link rel="stylesheet" href="style.css">
+    $courses = $_POST['course'];
+    $credits = $_POST['credits'];
+    $grades = $_POST['grade'];
 
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    $totalPoints = 0;
+    $totalCredits = 0;
 
-<!-- Bootstrap JS -->
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    $tableHtml = '<table class="table table-bordered mt-3">';
+    $tableHtml .= '<thead class="thead-dark">
+    <tr>
+    <th>Course</th>
+    <th>Credits</th>
+    <th>Grade</th>
+    <th>Grade Points</th>
+    </tr>
+    </thead><tbody>';
 
-<script src="script.js" defer></script>
-</head>
+    for ($i = 0; $i < count($courses); $i++) {
 
-<body>
-<div class="container">
-<h1 class="mt-5">GPA Calculator</h1>
+        $course = htmlspecialchars($courses[$i]);
+        $cr = floatval($credits[$i]);
+        $g = floatval($grades[$i]);
 
-<div id="result" class="mt-3"></div>
+        if ($cr <= 0) continue;
 
-<form id="gpaForm" class="mt-3">
-<div id="courses">
+        $pts = $cr * $g;
+        $totalPoints += $pts;
+        $totalCredits += $cr;
 
-<div class="course-row form-row mb-2">
-<div class="col">
-<input type="text" name="course[]" class="form-control" placeholder="Course name" required>
-</div>
+        $tableHtml .= "<tr>
+        <td>$course</td>
+        <td>$cr</td>
+        <td>$g</td>
+        <td>$pts</td>
+        </tr>";
+    }
 
-<div class="col-2">
-<input type="number" name="credits[]" class="form-control" placeholder="Credits" min="1" required>
-</div>
+    $tableHtml .= '</tbody></table>';
 
-<div class="col-2">
-<select name="grade[]" class="form-control">
-<option value="4.0">A</option>
-<option value="3.0">B</option>
-<option value="2.0">C</option>
-<option value="1.0">D</option>
-<option value="0.0">F</option>
-</select>
-</div>
+    if ($totalCredits > 0) {
 
-</div>
-</div>
+        $gpa = $totalPoints / $totalCredits;
 
-<button type="button" id="addCourse" class="btn btn-secondary mb-3">
-+ Add Course
-</button>
-<br>
+        if ($gpa >= 3.7) {
+            $interpretation = "Distinction";
+        } elseif ($gpa >= 3.0) {
+            $interpretation = "Merit";
+        } elseif ($gpa >= 2.0) {
+            $interpretation = "Pass";
+        } else {
+            $interpretation = "Fail";
+        }
 
-<button type="submit" class="btn btn-primary">
-Calculate GPA
-</button>
+        $message = "Your GPA is " . number_format($gpa, 2) . " ($interpretation).";
 
-</form>
-</div>
-</body>
-</html>
+        echo json_encode([
+            'success' => true,
+            'gpa' => $gpa,
+            'message' => $message,
+            'tableHtml' => $tableHtml
+        ]);
+
+    } else {
+
+        echo json_encode([
+            'success' => false,
+            'message' => 'No valid courses entered.'
+        ]);
+    }
+
+} else {
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Data not received.'
+    ]);
+}
+
+exit;
+?>
